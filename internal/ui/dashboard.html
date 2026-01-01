@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mirage Dashboard</title>
+    <title>Mirage</title>
     <style>
         * {
             margin: 0;
@@ -13,196 +13,186 @@
         }
 
         :root {
-            --bg-primary: #0a0e27;
-            --bg-secondary: #1a1f3a;
-            --bg-card: rgba(30, 35, 60, 0.7);
-            --accent-primary: #00d4ff;
-            --accent-secondary: #7c3aed;
-            --text-primary: #ffffff;
-            --text-secondary: #a0aec0;
-            --border: rgba(255, 255, 255, 0.1);
-            --success: #10b981;
-            --warning: #f59e0b;
+            --bg: #ffffff;
+            --bg-secondary: #fafafa;
+            --border: #e5e5e5;
+            --border-hover: #d4d4d4;
+            --text: #171717;
+            --text-secondary: #737373;
+            --text-tertiary: #a3a3a3;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --success: #22c55e;
             --error: #ef4444;
+            --radius: 8px;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1f3a 100%);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 32px;
         }
 
         header {
-            margin-bottom: 3rem;
-            animation: slideDown 0.6s ease-out;
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .logo {
-            width: 80px;
-            height: 80px;
-            filter: drop-shadow(0 4px 12px rgba(0, 212, 255, 0.3));
-        }
-
-        .header-content {
-            flex: 1;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
-        }
-
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .card {
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            animation: fadeInUp 0.6s ease-out forwards;
-            opacity: 0;
-        }
-
-        .card:nth-child(1) {
-            animation-delay: 0.1s;
-        }
-
-        .card:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .card-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
+            padding-bottom: 32px;
             border-bottom: 1px solid var(--border);
+            margin-bottom: 32px;
         }
 
-        h2 {
-            font-size: 1.25rem;
-            font-weight: 600;
+        .logo-section {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 16px;
         }
 
-        .badge {
-            background: rgba(0, 212, 255, 0.1);
-            color: var(--accent-primary);
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
+        .logo {
+            width: 40px;
+            height: 40px;
+        }
+
+        h1 {
+            font-size: 24px;
             font-weight: 600;
+            color: var(--text);
+            letter-spacing: -0.5px;
+        }
+
+        .version {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            font-weight: 400;
+        }
+
+        nav {
+            display: flex;
+            gap: 4px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            border-radius: var(--radius);
+        }
+
+        .tab:hover {
+            background: var(--bg-secondary);
+            color: var(--text);
+        }
+
+        .tab.active {
+            background: var(--bg-secondary);
+            color: var(--text);
+        }
+
+        .content {
+            display: none;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        .section {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text);
         }
 
         table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 0.5rem;
+            border-collapse: collapse;
         }
 
         thead th {
             text-align: left;
-            padding: 0.75rem 1rem;
-            font-size: 0.85rem;
+            padding: 12px;
+            font-size: 12px;
             font-weight: 600;
             color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
         }
 
         tbody tr {
-            background: rgba(255, 255, 255, 0.03);
-            transition: all 0.3s ease;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.1s ease;
         }
 
         tbody tr:hover {
-            background: rgba(255, 255, 255, 0.07);
-            transform: translateX(4px);
+            background: var(--bg-secondary);
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
         }
 
         tbody td {
-            padding: 1rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        tbody td:first-child {
-            border-left: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 8px 0 0 8px;
-        }
-
-        tbody td:last-child {
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 0 8px 8px 0;
+            padding: 12px;
+            font-size: 14px;
         }
 
         .method {
             display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
 
         .method.GET {
-            background: rgba(16, 185, 129, 0.15);
+            background: rgba(34, 197, 94, 0.1);
             color: var(--success);
         }
 
         .method.POST {
-            background: rgba(59, 130, 246, 0.15);
-            color: #3b82f6;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--accent);
         }
 
         .method.PUT {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--warning);
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
         }
 
         .method.DELETE {
-            background: rgba(239, 68, 68, 0.15);
+            background: rgba(239, 68, 68, 0.1);
             color: var(--error);
         }
 
         .method.PATCH {
-            background: rgba(124, 58, 237, 0.15);
-            color: var(--accent-secondary);
+            background: rgba(124, 58, 237, 0.1);
+            color: #7c3aed;
         }
 
         .status {
-            font-weight: 600;
+            font-weight: 500;
             font-variant-numeric: tabular-nums;
         }
 
@@ -211,77 +201,137 @@
         }
 
         .status.warn {
-            color: var(--warning);
+            color: #f59e0b;
         }
 
         .status.error {
             color: var(--error);
         }
 
-        .duration {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            font-variant-numeric: tabular-nums;
-        }
-
         .url {
-            color: var(--text-secondary);
             font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
-            font-size: 0.85rem;
-            max-width: 400px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            font-size: 13px;
+            color: var(--text-secondary);
         }
 
-        .matched {
-            display: inline-block;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--bg);
+            color: var(--text);
+            transition: border-color 0.15s ease;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        textarea {
+            font-family: 'SF Mono', monospace;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            background: var(--accent);
             color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            margin-top: 0.25rem;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .response-viewer {
+            margin-top: 24px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        .response-header {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .response-body {
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            color: var(--text-secondary);
         }
 
         .scenario-item {
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            transition: all 0.3s ease;
+            transition: border-color 0.15s ease;
         }
 
         .scenario-item:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: var(--accent-primary);
+            border-color: var(--border-hover);
         }
 
-        .scenario-info {
-            flex: 1;
-        }
-
-        .scenario-name {
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin-bottom: 0.25rem;
+        .scenario-info h3 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
         }
 
         .scenario-detail {
+            font-size: 12px;
             color: var(--text-secondary);
-            font-size: 0.8rem;
-            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+            font-family: 'SF Mono', monospace;
         }
 
         .switch {
             position: relative;
-            width: 52px;
-            height: 28px;
+            width: 44px;
+            height: 24px;
         }
 
         .switch input {
@@ -297,77 +347,58 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 255, 255, 0.1);
-            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 34px;
+            background: var(--border);
+            transition: 0.2s;
+            border-radius: 12px;
         }
 
         .slider:before {
             position: absolute;
             content: "";
-            height: 20px;
-            width: 20px;
+            height: 16px;
+            width: 16px;
             left: 4px;
             bottom: 4px;
             background: white;
-            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: 0.2s;
             border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         input:checked+.slider {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            background: var(--accent);
         }
 
         input:checked+.slider:before {
-            transform: translateX(24px);
+            transform: translateX(20px);
         }
 
         .empty-state {
             text-align: center;
-            padding: 3rem 2rem;
-            color: var(--text-secondary);
+            padding: 48px 24px;
+            color: var(--text-tertiary);
         }
 
-        .empty-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
+        .empty-state-text {
+            font-size: 14px;
         }
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .header-select {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
         }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .header-select input {
+            flex: 1;
         }
 
-        @media (max-width: 1024px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-
-            header {
-                flex-direction: column;
-                text-align: center;
-            }
+        .header-select button {
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 12px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -375,71 +406,138 @@
 <body>
     <div class="container">
         <header>
-            <svg class="logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#0A2463;stop-opacity:0.9" />
-                        <stop offset="100%" style="stop-color:#3E92CC;stop-opacity:0.8" />
-                    </linearGradient>
-                    <linearGradient id="grad2" x1="100%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:#3E92CC;stop-opacity:0.8" />
-                        <stop offset="100%" style="stop-color:#4EF4E3;stop-opacity:0.7" />
-                    </linearGradient>
-                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="5" result="coloredBlur" />
-                        <feMerge>
-                            <feMergeNode in="coloredBlur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
-                </defs>
-                <g transform="translate(100, 100) rotate(-15) translate(-100, -100)">
-                    <rect x="30" y="50" width="120" height="120" rx="20" transform="rotate(45 90 110)"
-                        fill="url(#grad1)" />
-                    <path d="M40 100 H200" stroke="white" stroke-width="4" stroke-opacity="0.3"
-                        stroke-linecap="round" />
-                    <path d="M50 125 H190" stroke="white" stroke-width="4" stroke-opacity="0.3"
-                        stroke-linecap="round" />
-                    <path d="M50 75 H190" stroke="white" stroke-width="4" stroke-opacity="0.3" stroke-linecap="round" />
-                    <rect x="70" y="50" width="120" height="120" rx="20" transform="rotate(45 130 110)"
-                        fill="url(#grad2)" style="mix-blend-mode: screen;" />
-                </g>
-                <path d="M110 65 L140 100 L110 135 L80 100 Z" fill="#4EF4E3" fill-opacity="0.6" filter="url(#glow)"
-                    style="mix-blend-mode: overlay;" />
-            </svg>
-            <div class="header-content">
-                <h1>Mirage</h1>
-                <p class="subtitle">API Mocking Gateway & Traffic Recorder</p>
+            <div class="logo-section">
+                <svg class="logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#0A2463;stop-opacity:0.9" />
+                            <stop offset="100%" style="stop-color:#3E92CC;stop-opacity:0.8" />
+                        </linearGradient>
+                        <linearGradient id="grad2" x1="100%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#3E92CC;stop-opacity:0.8" />
+                            <stop offset="100%" style="stop-color:#4EF4E3;stop-opacity:0.7" />
+                        </linearGradient>
+                    </defs>
+                    <g transform="translate(100, 100) rotate(-15) translate(-100, -100)">
+                        <rect x="30" y="50" width="120" height="120" rx="20" transform="rotate(45 90 110)"
+                            fill="url(#grad1)" />
+                        <rect x="70" y="50" width="120" height="120" rx="20" transform="rotate(45 130 110)"
+                            fill="url(#grad2)" style="mix-blend-mode: screen;" />
+                    </g>
+                </svg>
+                <div>
+                    <h1>Mirage</h1>
+                    <div class="version">v0.1.0</div>
+                </div>
             </div>
+            <nav>
+                <button class="tab active" onclick="showTab('requests')">Requests</button>
+                <button class="tab" onclick="showTab('test')">Test</button>
+                <button class="tab" onclick="showTab('scenarios')">Scenarios</button>
+            </nav>
         </header>
 
-        <div class="grid">
-            <div class="card">
-                <div class="card-header">
-                    <h2>📊 Request Log</h2>
-                    <span class="badge" id="requestCount">0 requests</span>
-                </div>
+        <div id="requests-content" class="content active">
+            <div class="section">
+                <div class="section-title">Request Log</div>
                 <div id="requestTable"></div>
             </div>
+        </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h2>🎭 Scenarios</h2>
+        <div id="test-content" class="content">
+            <div class="section">
+                <div class="section-title">Request Builder</div>
+                <div class="form-group">
+                    <label>Method</label>
+                    <select id="testMethod">
+                        <option>GET</option>
+                        <option>POST</option>
+                        <option>PUT</option>
+                        <option>DELETE</option>
+                        <option>PATCH</option>
+                    </select>
                 </div>
+                <div class="form-group">
+                    <label>URL</label>
+                    <input type="text" id="testURL" placeholder="http://localhost:8080/api/endpoint">
+                </div>
+                <div class="form-group">
+                    <label>Headers</label>
+                    <div id="headers-container">
+                        <div class="header-select">
+                            <input type="text" placeholder="Key" class="header-key">
+                            <input type="text" placeholder="Value" class="header-value">
+                            <button onclick="addHeader()">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Body</label>
+                    <textarea id="testBody" placeholder='{"key": "value"}'></textarea>
+                </div>
+                <button class="btn" onclick="sendTestRequest()">Send Request</button>
+                <div id="testResponse" class="response-viewer" style="display:none">
+                    <div class="response-header">Response</div>
+                    <div class="response-body" id="responseBody"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="scenarios-content" class="content">
+            <div class="section">
+                <div class="section-title">Scenarios</div>
                 <div id="scenarioList"></div>
             </div>
         </div>
     </div>
 
     <script>
-        function formatTime(iso) {
-            const d = new Date(iso);
-            return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + '-content').classList.add('active');
         }
 
-        function formatDuration(ns) {
-            const ms = Math.round(ns / 1000000);
-            return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`;
+        function addHeader() {
+            const container = document.getElementById('headers-container');
+            const div = document.createElement('div');
+            div.className = 'header-select';
+            div.innerHTML = `
+                <input type="text" placeholder="Key" class="header-key">
+                <input type="text" placeholder="Value" class="header-value">
+                <button onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(div);
+        }
+
+        async function sendTestRequest() {
+            const method = document.getElementById('testMethod').value;
+            const url = document.getElementById('testURL').value;
+            const body = document.getElementById('testBody').value;
+
+            const headers = {};
+            document.querySelectorAll('.header-select').forEach(div => {
+                const key = div.querySelector('.header-key').value;
+                const value = div.querySelector('.header-value').value;
+                if (key) headers[key] = value;
+            });
+
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers,
+                    body: method !== 'GET' ? body : undefined
+                });
+
+                const responseText = await response.text();
+                document.getElementById('responseBody').textContent =
+                    `Status: ${response.status} ${response.statusText}\n\n${responseText}`;
+                document.getElementById('testResponse').style.display = 'block';
+            } catch (e) {
+                document.getElementById('responseBody').textContent = `Error: ${e.message}`;
+                document.getElementById('testResponse').style.display = 'block';
+            }
         }
 
         async function fetchRequests() {
@@ -447,10 +545,9 @@
                 const res = await fetch('/__mirage/api/requests');
                 const logs = await res.json();
                 const container = document.getElementById('requestTable');
-                document.getElementById('requestCount').textContent = `${logs.length} requests`;
 
                 if (logs.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🌙</div><p>No requests yet</p></div>';
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">No requests yet</div></div>';
                     return;
                 }
 
@@ -468,14 +565,11 @@
                         <tbody>
                             ${logs.reverse().map(l => `
                                 <tr>
-                                    <td style="font-variant-numeric: tabular-nums; color: var(--text-secondary);">${formatTime(l.timestamp)}</td>
+                                    <td>${new Date(l.timestamp).toLocaleTimeString()}</td>
                                     <td><span class="method ${l.method}">${l.method}</span></td>
                                     <td><span class="status ${l.status >= 400 ? 'error' : l.status >= 300 ? 'warn' : 'ok'}">${l.status}</span></td>
-                                    <td><span class="duration">${formatDuration(l.duration)}</span></td>
-                                    <td>
-                                        <div class="url">${l.url}</div>
-                                        ${l.matched ? `<div class="matched">Mock: ${l.matched}</div>` : ''}
-                                    </td>
+                                    <td>${Math.round(l.duration / 1000000)}ms</td>
+                                    <td><span class="url">${l.url}</span></td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -493,14 +587,14 @@
                 const container = document.getElementById('scenarioList');
 
                 if (scenarios.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🎭</div><p>No scenarios loaded</p></div>';
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-text">No scenarios loaded</div></div>';
                     return;
                 }
 
                 container.innerHTML = scenarios.map(s => `
                     <div class="scenario-item">
                         <div class="scenario-info">
-                            <div class="scenario-name">${s.Name}</div>
+                            <h3>${s.Name}</h3>
                             <div class="scenario-detail">${s.Match.Method || '*'} ${s.Match.Path}</div>
                         </div>
                         <label class="switch">
@@ -524,7 +618,6 @@
                 fetchScenarios();
             } catch (e) {
                 console.error('Failed to toggle scenario:', e);
-                alert('Failed to toggle scenario');
             }
         }
 
