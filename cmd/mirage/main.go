@@ -8,6 +8,7 @@ import (
 
 	"mirage/internal/config"
 	"mirage/internal/proxy"
+	"mirage/internal/recorder"
 
 	"github.com/spf13/cobra"
 )
@@ -43,7 +44,7 @@ func main() {
 			}
 			
 			// Initialize proxy handler
-			p := proxy.NewProxy(cfg)
+			p := proxy.NewProxy(cfg, nil)
 			
 			// Start server
 			if err := http.ListenAndServe(addr, p); err != nil {
@@ -52,9 +53,31 @@ func main() {
 		},
 	}
 
+	var outputFile string
+	var recordCmd = &cobra.Command{
+		Use:   "record",
+		Short: "Start proxy in recording mode",
+		Run: func(cmd *cobra.Command, args []string) {
+			addr := fmt.Sprintf(":%d", port)
+			fmt.Printf("Starting Mirage recorder on %s, saving to %s...\n", addr, outputFile)
+			
+			rec := recorder.NewRecorder(outputFile)
+			p := proxy.NewProxy(nil, rec) // No config in record mode? Or maybe allow both? For now clean slate.
+			
+			if err := http.ListenAndServe(addr, p); err != nil {
+				log.Fatalf("Server failed: %v", err)
+			}
+		},
+	}
+	
+	recordCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port to run the proxy on")
+	recordCmd.Flags().StringVarP(&outputFile, "output", "o", "traffic.json", "Output file for recorded traffic")
+
 	startCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port to run the proxy on")
 	startCmd.Flags().StringVarP(&configPath, "config", "c", "", "Path to scenarios config file")
+	
 	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(recordCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

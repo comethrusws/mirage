@@ -8,17 +8,19 @@ import (
 	"time"
 
 	"mirage/internal/config"
+	"mirage/internal/recorder"
 	"mirage/internal/scenario"
 )
 
 // Proxy implements http.Handler and forwards requests
 type Proxy struct {
-	client  *http.Client
-	matcher *scenario.Matcher
+	client   *http.Client
+	matcher  *scenario.Matcher
+	recorder *recorder.Recorder
 }
 
 // NewProxy creates a new Proxy instance
-func NewProxy(cfg *config.Config) *Proxy {
+func NewProxy(cfg *config.Config, rec *recorder.Recorder) *Proxy {
 	var m *scenario.Matcher
 	if cfg != nil {
 		m = scenario.NewMatcher(cfg.Scenarios)
@@ -30,7 +32,8 @@ func NewProxy(cfg *config.Config) *Proxy {
 				return http.ErrUseLastResponse // Don't follow redirects, forward them
 			},
 		},
-		matcher: m,
+		matcher:  m,
+		recorder: rec,
 	}
 }
 
@@ -52,7 +55,12 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[REQ] %s %s Headers: %v Body: %s", r.Method, r.URL.String(), r.Header, logReqBody)
 
-	// Check for mock scenario
+	// Check for mock scenario (skip if recording? For now, if matcher matches, we mock. Recording usually implies capturing real traffic)
+	// If recorder is present, maybe we SHOULD capture the mock too? But requirement says "Record real API traffic".
+	// Let's assume if we match a scenario, we return that.
+	// If we don't match, we forward.
+	// We only record if we forward.
+	
 	if p.matcher != nil {
 		if s := p.matcher.Match(r); s != nil {
 			log.Printf("[MOCK] Matched scenario: %s", s.Name)
@@ -103,6 +111,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	log.Printf("[RES] Status: %d Duration: %v Body: %s", resp.StatusCode, duration, logRespBody)
+
+	// Record interaction if recorder is present
+	if p.recorder != nil {
+		p.recorder.Record(r, string(reqBody), resp, string(respBody), duration)
+	}
 }
 
 func copyHeader(dst, src http.Header) {
