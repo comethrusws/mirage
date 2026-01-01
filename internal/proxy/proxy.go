@@ -3,12 +3,12 @@ package proxy
 import (
 	"bytes"
 	"io"
-	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"mirage/internal/config"
+	"mirage/internal/logger"
 	"mirage/internal/recorder"
 	"mirage/internal/scenario"
 )
@@ -63,26 +63,25 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	
 	logReqBody := string(reqBody)
 	if len(logReqBody) > 500 {
-		logReqBody = logReqBody[:500] + "...(truncated)"
+		logReqBody = logReqBody[:500] + "..."
 	}
 
-	log.Printf("[REQ] %s %s Headers: %v Body: %s", r.Method, r.URL.String(), r.Header, logReqBody)
+	logger.LogRequest(r.Method, r.URL.String(), logReqBody)
 	
 	var matchedScenario string
 	var status int
 	
 	if p.matcher != nil {
 		if s := p.matcher.Match(r); s != nil {
-			log.Printf("[MOCK] Matched scenario: %s", s.Name)
 			scenario.ServeMock(w, s)
 			
 			duration := time.Since(start)
-			log.Printf("[RES] [MOCK] Status: %d Duration: %v", s.Response.Status, duration)
 			
 			matchedScenario = s.Name
 			status = s.Response.Status
 			if status == 0 { status = 200 }
 			
+			logger.LogMock(s.Name, status, duration)
 			p.logRequest(r, status, duration, matchedScenario)
 			return
 		}
@@ -94,7 +93,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := p.client.Do(outReq)
 	if err != nil {
-		log.Printf("[ERR] Forwarding failed: %v", err)
+		logger.LogError("Forwarding failed: " + err.Error())
 		http.Error(w, "Error forwarding request: "+err.Error(), http.StatusBadGateway)
 		p.logRequest(r, 502, time.Since(start), "")
 		return
@@ -109,7 +108,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("[ERR] Reading response body: %v", err)
+		logger.LogError("Reading response body: " + err.Error())
 		return
 	}
 	
@@ -118,10 +117,10 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	duration := time.Since(start)
 	logRespBody := string(respBody)
 	if len(logRespBody) > 500 {
-		logRespBody = logRespBody[:500] + "...(truncated)"
+		logRespBody = logRespBody[:500] + "..."
 	}
 	
-	log.Printf("[RES] Status: %d Duration: %v Body: %s", resp.StatusCode, duration, logRespBody)
+	logger.LogResponse(resp.StatusCode, duration, logRespBody)
 
 	if p.recorder != nil {
 		p.recorder.Record(r, string(reqBody), resp, string(respBody), duration)
