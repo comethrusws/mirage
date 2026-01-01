@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirage Dashboard</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; min-height: 200px; }
+        h2 { margin-top: 0; font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        
+        /* Requests Table */
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
+        th { color: #666; font-weight: 600; }
+        .method { font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
+        .method.GET { background: #e3f2fd; color: #1976d2; }
+        .method.POST { background: #e8f5e9; color: #388e3c; }
+        .method.PUT { background: #fff3e0; color: #f57c00; }
+        .method.DELETE { background: #ffebee; color: #d32f2f; }
+        .status { font-weight: bold; }
+        .status.ok { color: #388e3c; }
+        .status.error { color: #d32f2f; }
+        .matched { font-size: 0.8em; background: #fff8e1; color: #fbc02d; padding: 2px 6px; border-radius: 4px; }
+
+        /* Scenarios List */
+        .scenario-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .scenario-info { flex: 1; }
+        .scenario-name { font-weight: 600; display: block; }
+        .scenario-detail { font-size: 0.8em; color: #666; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #2196F3; }
+        input:checked + .slider:before { transform: translateX(16px); }
+    </style>
+</head>
+<body>
+    <header style="margin-bottom: 20px;">
+        <h1 style="margin: 0;">Mirage Dashboard</h1>
+    </header>
+    
+    <div class="container">
+        <!-- Request Log -->
+        <div class="card">
+            <h2>Recent Requests</h2>
+            <div style="overflow-x: auto;">
+                <table id="reqTable">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Path</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Scenarios -->
+        <div class="card">
+            <h2>Scenarios</h2>
+            <div id="scenarioList"></div>
+            <div style="margin-top: 10px; text-align: right; font-size: 0.8em; color: #999;">
+                Auto-refreshes every 2s
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function formatTime(iso) {
+            const d = new Date(iso);
+            return d.toLocaleTimeString();
+        }
+
+        async function fetchRequests() {
+            try {
+                const res = await fetch('/__mirage/api/requests');
+                const logs = await res.json();
+                const tbody = document.querySelector('#reqTable tbody');
+                tbody.innerHTML = logs.reverse().map(l => `
+                    <tr>
+                        <td>${formatTime(l.timestamp)}</td>
+                        <td><span class="method ${l.method}">${l.method}</span></td>
+                        <td><span class="status ${l.status >= 400 ? 'error' : 'ok'}">${l.status}</span></td>
+                        <td>${Math.round(l.duration / 1000000)}ms</td>
+                        <td>
+                            <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${l.url}</div>
+                            ${l.matched ? `<span class="matched">Mock: ${l.matched}</span>` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function fetchScenarios() {
+            try {
+                const res = await fetch('/__mirage/api/scenarios');
+                const scenarios = await res.json();
+                const container = document.getElementById('scenarioList');
+                // Don't redraw if interacting? Basic implementation overwrites.
+                container.innerHTML = scenarios.map(s => `
+                    <div class="scenario-item">
+                        <div class="scenario-info">
+                            <span class="scenario-name">${s.Name}</span>
+                            <span class="scenario-detail">${s.Match.Method || '*'} ${s.Match.Path}</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" ${s.Enabled ? 'checked' : ''} onchange="toggleScenario('${s.Name}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                `).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function toggleScenario(name, enabled) {
+            try {
+                await fetch(`/__mirage/api/scenarios/${name}/toggle`, {
+                    method: 'POST',
+                    body: JSON.stringify({ enabled }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                fetchScenarios(); // refresh
+            } catch (e) {
+                console.error(e);
+                alert('Failed to toggle scenario');
+            }
+        }
+
+        // Poll
+        setInterval(fetchRequests, 2000);
+        setInterval(fetchScenarios, 5000);
+        fetchRequests();
+        fetchScenarios();
+    </script>
+</body>
+</html>

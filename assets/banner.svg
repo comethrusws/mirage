@@ -1,0 +1,32 @@
+<svg width="800" height="200" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="grad1_h" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" style="stop-color:#0A2463;stop-opacity:0.9" />
+<stop offset="100%" style="stop-color:#3E92CC;stop-opacity:0.8" />
+</linearGradient>
+<linearGradient id="grad2_h" x1="100%" y1="0%" x2="0%" y2="100%">
+<stop offset="0%" style="stop-color:#3E92CC;stop-opacity:0.8" />
+<stop offset="100%" style="stop-color:#4EF4E3;stop-opacity:0.7" />
+</linearGradient>
+<filter id="glow_h" x="-50%" y="-50%" width="200%" height="200%">
+<feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+<feMerge>
+<feMergeNode in="coloredBlur"/>
+<feMergeNode in="SourceGraphic"/>
+</feMerge>
+</filter>
+</defs>
+
+<g transform="translate(50, 25) scale(0.75)">
+<g transform="translate(100, 100) rotate(-15) translate(-100, -100)">
+<rect x="30" y="50" width="120" height="120" rx="20" transform="rotate(45 90 110)" fill="url(#grad1_h)" />
+<path d="M40 100 H200" stroke="white" stroke-width="4" stroke-opacity="0.3" stroke-linecap="round"/>
+<path d="M50 125 H190" stroke="white" stroke-width="4" stroke-opacity="0.3" stroke-linecap="round"/>
+<path d="M50 75 H190" stroke="white" stroke-width="4" stroke-opacity="0.3" stroke-linecap="round"/>
+<rect x="70" y="50" width="120" height="120" rx="20" transform="rotate(45 130 110)" fill="url(#grad2_h)" style="mix-blend-mode: screen;" />
+</g>
+<path d="M110 65 L140 100 L110 135 L80 100 Z" fill="#4EF4E3" fill-opacity="0.6" filter="url(#glow_h)" style="mix-blend-mode: overlay;"/>
+</g>
+
+<text x="230" y="125" fill="#FFFFFF" font-family="'Inter', 'Space Grotesk', sans-serif" font-weight="700" font-size="96" letter-spacing="-2">Mirage</text>
+</svg>

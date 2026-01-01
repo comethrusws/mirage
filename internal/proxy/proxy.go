@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"mirage/internal/config"
@@ -17,6 +18,21 @@ type Proxy struct {
 	client   *http.Client
 	matcher  *scenario.Matcher
 	recorder *recorder.Recorder
+	
+	// In-memory request log for dashboard
+	reqLogMu   sync.RWMutex
+	reqLog     []LogEntry
+	MaxLogSize int
+}
+
+type LogEntry struct {
+	ID        int64         `json:"id"`
+	Timestamp time.Time     `json:"timestamp"`
+	Method    string        `json:"method"`
+	URL       string        `json:"url"`
+	Status    int           `json:"status"`
+	Duration  time.Duration `json:"duration"`
+	Matched   string        `json:"matched,omitempty"` // Scenario name if matched
 }
 
 // NewProxy creates a new Proxy instance
@@ -32,14 +48,31 @@ func NewProxy(cfg *config.Config, rec *recorder.Recorder) *Proxy {
 				return http.ErrUseLastResponse // Don't follow redirects, forward them
 			},
 		},
-		matcher:  m,
-		recorder: rec,
+		matcher:    m,
+		recorder:   rec,
+		reqLog:     make([]LogEntry, 0),
+		MaxLogSize: 100,
 	}
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 
+	// Handle Dashboard/API requests if embedded (this logic might be in separate handler, 
+	// but user asked for single server on 8080. We can check prefix here or use Mux in main.
+	// If main uses p for everything, p needs to dispatch.
+	// BUT main uses `http.ListenAndServe(addr, p)`.
+	// So p is the root handler.
+	// We can check path here.
+	
+	// To avoid circular deps, UI handler should be passed to Proxy or handled in main via a wrapper.
+	// Let's assume passed in or handled here. 
+	// Easier: main creates a Mux that routes /__mirage/ to UI and / to Proxy.
+	// So Proxy only handles proxy traffic.
+	// main.go will change.
+	
+	// Proxy logic:
+	
 	// Read and log request body
 	var reqBody []byte
 	if r.Body != nil {
@@ -54,13 +87,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("[REQ] %s %s Headers: %v Body: %s", r.Method, r.URL.String(), r.Header, logReqBody)
-
-	// Check for mock scenario (skip if recording? For now, if matcher matches, we mock. Recording usually implies capturing real traffic)
-	// If recorder is present, maybe we SHOULD capture the mock too? But requirement says "Record real API traffic".
-	// Let's assume if we match a scenario, we return that.
-	// If we don't match, we forward.
-	// We only record if we forward.
 	
+	var matchedScenario string
+	var status int
+	
+	// Check for mock scenario
 	if p.matcher != nil {
 		if s := p.matcher.Match(r); s != nil {
 			log.Printf("[MOCK] Matched scenario: %s", s.Name)
@@ -68,6 +99,12 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			
 			duration := time.Since(start)
 			log.Printf("[RES] [MOCK] Status: %d Duration: %v", s.Response.Status, duration)
+			
+			matchedScenario = s.Name
+			status = s.Response.Status
+			if status == 0 { status = 200 }
+			
+			p.logRequest(r, status, duration, matchedScenario)
 			return
 		}
 	}
@@ -82,6 +119,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("[ERR] Forwarding failed: %v", err)
 		http.Error(w, "Error forwarding request: "+err.Error(), http.StatusBadGateway)
+		p.logRequest(r, 502, time.Since(start), "")
 		return
 	}
 	defer resp.Body.Close()
@@ -92,6 +130,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Write status code
 	w.WriteHeader(resp.StatusCode)
+	status = resp.StatusCode
 
 	// Read response body to log it (and write to client)
 	respBody, err := io.ReadAll(resp.Body)
@@ -116,6 +155,54 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if p.recorder != nil {
 		p.recorder.Record(r, string(reqBody), resp, string(respBody), duration)
 	}
+	
+	p.logRequest(r, status, duration, "")
+}
+
+func (p *Proxy) logRequest(r *http.Request, status int, duration time.Duration, matched string) {
+	p.reqLogMu.Lock()
+	defer p.reqLogMu.Unlock()
+	
+	entry := LogEntry{
+		ID:        time.Now().UnixNano(),
+		Timestamp: time.Now(),
+		Method:    r.Method,
+		URL:       r.URL.String(),
+		Status:    status,
+		Duration:  duration,
+		Matched:   matched,
+	}
+	
+	// prepend or append? Append is easier, loop backwards for UI
+	p.reqLog = append(p.reqLog, entry)
+	if len(p.reqLog) > p.MaxLogSize {
+		p.reqLog = p.reqLog[1:]
+	}
+}
+
+// Accessors for UI
+
+func (p *Proxy) GetRecentRequests() []LogEntry {
+	p.reqLogMu.RLock()
+	defer p.reqLogMu.RUnlock()
+	// Return copy
+	res := make([]LogEntry, len(p.reqLog))
+	copy(res, p.reqLog)
+    // Reverse for display? UI can handle it.
+	return res
+}
+
+func (p *Proxy) GetScenarios() []scenario.RuntimeScenario {
+	if p.matcher == nil {
+		return nil
+	}
+	// Add method in matcher to get scenarios
+	return p.matcher.GetScenarios()
+}
+
+func (p *Proxy) ToggleScenario(name string, enabled bool) bool {
+    if p.matcher == nil { return false }
+    return p.matcher.SetEnabled(name, enabled)
 }
 
 func copyHeader(dst, src http.Header) {

@@ -1,0 +1,36 @@
+scenarios:
+  - name: get-users-success
+    match:
+      path: /api/users
+      method: GET
+    response:
+      status: 200
+      headers:
+        Content-Type: application/json
+      body: |
+        {
+          "users": [
+            {"id": 1, "name": "Alice"},
+            {"id": 2, "name": "Bob"}
+          ]
+        }
+      delay: 500ms
+
+  - name: create-user-error
+    match:
+      path: /api/users
+      method: POST
+    response:
+      status: 400
+      headers:
+        Content-Type: application/json
+      body: '{"error": "Invalid input"}'
+
+  - name: service-unavailable
+    match:
+      path: /api/*
+      headers:
+        X-Simulate-Error: "true"
+    response:
+      status: 503
+      body: "Service Unavailable"

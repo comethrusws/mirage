@@ -11,6 +11,7 @@ import (
 	"mirage/internal/config"
 	"mirage/internal/proxy"
 	"mirage/internal/recorder"
+	"mirage/internal/ui"
 
 	"github.com/spf13/cobra"
 )
@@ -48,8 +49,21 @@ func main() {
 			// Initialize proxy handler
 			p := proxy.NewProxy(cfg, nil)
 			
+			// Initialize UI
+			dashboard := ui.NewUI(p)
+			uiHandler := dashboard.Handler()
+			
+			// Combined handler
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if strings.HasPrefix(r.URL.Path, "/__mirage/") {
+					uiHandler.ServeHTTP(w, r)
+				} else {
+					p.ServeHTTP(w, r)
+				}
+			})
+			
 			// Start server
-			if err := http.ListenAndServe(addr, p); err != nil {
+			if err := http.ListenAndServe(addr, handler); err != nil {
 				log.Fatalf("Server failed: %v", err)
 			}
 		},
