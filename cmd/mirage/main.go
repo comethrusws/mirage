@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"mirage/internal/config"
 	"mirage/internal/proxy"
@@ -76,8 +78,81 @@ func main() {
 	startCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port to run the proxy on")
 	startCmd.Flags().StringVarP(&configPath, "config", "c", "", "Path to scenarios config file")
 	
+	// Scenarios command
+	var scenariosCmd = &cobra.Command{
+		Use:   "scenarios",
+		Short: "Manage scenarios",
+	}
+
+	var listCmd = &cobra.Command{
+		Use:   "list [config]",
+		Short: "List scenarios in a config file",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			cfg, err := config.LoadConfig(args[0])
+			if err != nil {
+				log.Fatalf("Failed to load config: %v", err)
+			}
+			fmt.Printf("Scenarios in %s:\n", args[0])
+			for _, s := range cfg.Scenarios {
+				fmt.Printf("- %s (Matches: %s %s)\n", s.Name, s.Match.Method, s.Match.Path)
+			}
+		},
+	}
+	scenariosCmd.AddCommand(listCmd)
+	
+	// Replay command
+	var replayCmd = &cobra.Command{
+		Use:   "replay [traffic.json]",
+		Short: "Replay recorded traffic",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			// Basic playback logic
+			data, err := os.ReadFile(args[0])
+			if err != nil {
+				log.Fatalf("Failed to read file: %v", err)
+			}
+			
+			var interactions []recorder.Interaction
+			if err := json.Unmarshal(data, &interactions); err != nil {
+				log.Fatalf("Failed to parse JSON: %v", err)
+			}
+			
+			client := &http.Client{}
+			fmt.Printf("Replaying %d interactions...\n", len(interactions))
+			
+			for i, interaction := range interactions {
+				reqData := interaction.Request
+				fmt.Printf("[%d] %s %s... ", i+1, reqData.Method, reqData.URL)
+				
+				req, err := http.NewRequest(reqData.Method, reqData.URL, strings.NewReader(reqData.Body))
+				if err != nil {
+					fmt.Printf("Failed to create request: %v\n", err)
+					continue
+				}
+				
+				// Restore headers
+				for k, vv := range reqData.Headers {
+					for _, v := range vv {
+						req.Header.Add(k, v)
+					}
+				}
+				
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Printf("Error: %v\n", err)
+					continue
+				}
+				resp.Body.Close()
+				fmt.Printf("Status: %d\n", resp.StatusCode)
+			}
+		},
+	}
+
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(recordCmd)
+	rootCmd.AddCommand(scenariosCmd)
+	rootCmd.AddCommand(replayCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
