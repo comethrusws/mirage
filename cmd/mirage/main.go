@@ -3,46 +3,55 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 
 	"mirage/internal/config"
+	"mirage/internal/logger"
 	"mirage/internal/proxy"
 	"mirage/internal/recorder"
 	"mirage/internal/ui"
+	"mirage/internal/updater"
 
+	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 )
+
+const version = "0.1.0"
 
 func main() {
 	var port int
 	var configPath string
+	var noBrowser bool
 
 	var rootCmd = &cobra.Command{
-		Use:   "mirage",
-		Short: "Mirage is an API mocking gateway",
-		Long:  `Mirage intercepts HTTP requests and allows mocking responses, recording traffic, and simulating network conditions.`,
+		Use:     "mirage",
+		Short:   "Mirage is an API mocking gateway",
+		Long:    `Mirage intercepts HTTP requests and allows mocking responses, recording traffic, and simulating network conditions.`,
+		Version: version,
 	}
 
 	var startCmd = &cobra.Command{
 		Use:   "start",
 		Short: "Start the proxy server",
 		Run: func(cmd *cobra.Command, args []string) {
+			logger.PrintBanner(version)
+			
 			addr := fmt.Sprintf(":%d", port)
-			fmt.Printf("Starting Mirage proxy on %s...\n", addr)
+			dashboardURL := fmt.Sprintf("http://localhost:%d/__mirage/", port)
 			
 			var cfg *config.Config
 			if configPath != "" {
 				var err error
 				cfg, err = config.LoadConfig(configPath)
 				if err != nil {
-					log.Fatalf("Failed to load config: %v", err)
+					logger.LogError(fmt.Sprintf("Failed to load config: %v", err))
+					os.Exit(1)
 				}
-				fmt.Printf("Loaded configuration from %s (%d scenarios)\n", configPath, len(cfg.Scenarios))
+				logger.LogSuccess(fmt.Sprintf("Loaded %d scenarios from %s", len(cfg.Scenarios), configPath))
 			} else {
-				fmt.Println("No config file specified (-c), running in pure proxy mode")
+				logger.LogInfo("No config specified, running in pure proxy mode")
 			}
 			
 			p := proxy.NewProxy(cfg, nil)
@@ -58,8 +67,17 @@ func main() {
 				}
 			})
 			
+			logger.LogSuccess(fmt.Sprintf("Server started on %s", addr))
+			logger.LogInfo(fmt.Sprintf("Dashboard: %s", dashboardURL))
+			fmt.Println()
+			
+			if !noBrowser {
+				go browser.OpenURL(dashboardURL)
+			}
+			
 			if err := http.ListenAndServe(addr, handler); err != nil {
-				log.Fatalf("Server failed: %v", err)
+				logger.LogError(fmt.Sprintf("Server failed: %v", err))
+				os.Exit(1)
 			}
 		},
 	}
@@ -69,14 +87,20 @@ func main() {
 		Use:   "record",
 		Short: "Start proxy in recording mode",
 		Run: func(cmd *cobra.Command, args []string) {
+			logger.PrintBanner(version)
+			
 			addr := fmt.Sprintf(":%d", port)
-			fmt.Printf("Starting Mirage recorder on %s, saving to %s...\n", addr, outputFile)
 			
 			rec := recorder.NewRecorder(outputFile)
 			p := proxy.NewProxy(nil, rec)
 			
+			logger.LogSuccess(fmt.Sprintf("Recording started on %s", addr))
+			logger.LogInfo(fmt.Sprintf("Saving to %s", outputFile))
+			fmt.Println()
+			
 			if err := http.ListenAndServe(addr, p); err != nil {
-				log.Fatalf("Server failed: %v", err)
+				logger.LogError(fmt.Sprintf("Server failed: %v", err))
+				os.Exit(1)
 			}
 		},
 	}
@@ -86,6 +110,7 @@ func main() {
 
 	startCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port to run the proxy on")
 	startCmd.Flags().StringVarP(&configPath, "config", "c", "", "Path to scenarios config file")
+	startCmd.Flags().BoolVar(&noBrowser, "no-browser", false, "Don't open browser automatically")
 	
 	var scenariosCmd = &cobra.Command{
 		Use:   "scenarios",
@@ -99,11 +124,12 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 			cfg, err := config.LoadConfig(args[0])
 			if err != nil {
-				log.Fatalf("Failed to load config: %v", err)
+				logger.LogError(fmt.Sprintf("Failed to load config: %v", err))
+				os.Exit(1)
 			}
-			fmt.Printf("Scenarios in %s:\n", args[0])
+			logger.LogSuccess(fmt.Sprintf("Scenarios in %s:", args[0]))
 			for _, s := range cfg.Scenarios {
-				fmt.Printf("- %s (Matches: %s %s)\n", s.Name, s.Match.Method, s.Match.Path)
+				fmt.Printf("  • %s (%s %s)\n", s.Name, s.Match.Method, s.Match.Path)
 			}
 		},
 	}
@@ -116,16 +142,18 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 			data, err := os.ReadFile(args[0])
 			if err != nil {
-				log.Fatalf("Failed to read file: %v", err)
+				logger.LogError(fmt.Sprintf("Failed to read file: %v", err))
+				os.Exit(1)
 			}
 			
 			var interactions []recorder.Interaction
 			if err := json.Unmarshal(data, &interactions); err != nil {
-				log.Fatalf("Failed to parse JSON: %v", err)
+				logger.LogError(fmt.Sprintf("Failed to parse JSON: %v", err))
+				os.Exit(1)
 			}
 			
 			client := &http.Client{}
-			fmt.Printf("Replaying %d interactions...\n", len(interactions))
+			logger.LogInfo(fmt.Sprintf("Replaying %d interactions...", len(interactions)))
 			
 			for i, interaction := range interactions {
 				reqData := interaction.Request
@@ -133,7 +161,7 @@ func main() {
 				
 				req, err := http.NewRequest(reqData.Method, reqData.URL, strings.NewReader(reqData.Body))
 				if err != nil {
-					fmt.Printf("Failed to create request: %v\n", err)
+					logger.LogError(fmt.Sprintf("Failed to create request: %v", err))
 					continue
 				}
 				
@@ -145,11 +173,24 @@ func main() {
 				
 				resp, err := client.Do(req)
 				if err != nil {
-					fmt.Printf("Error: %v\n", err)
+					logger.LogError(err.Error())
 					continue
 				}
 				resp.Body.Close()
-				fmt.Printf("Status: %d\n", resp.StatusCode)
+				logger.LogSuccess(fmt.Sprintf("Status: %d", resp.StatusCode))
+			}
+		},
+	}
+
+	var updateCmd = &cobra.Command{
+		Use:   "update",
+		Short: "Update mirage to the latest version",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger.PrintBanner(version)
+			
+			if err := updater.Update(version); err != nil {
+				logger.LogError(err.Error())
+				os.Exit(1)
 			}
 		},
 	}
@@ -158,9 +199,10 @@ func main() {
 	rootCmd.AddCommand(recordCmd)
 	rootCmd.AddCommand(scenariosCmd)
 	rootCmd.AddCommand(replayCmd)
+	rootCmd.AddCommand(updateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		logger.LogError(err.Error())
 		os.Exit(1)
 	}
 }
