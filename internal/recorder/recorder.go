@@ -8,12 +8,11 @@ import (
 	"time"
 )
 
-// Interaction represents a captured request/response pair
 type Interaction struct {
-	Timestamp time.Time    `json:"timestamp"`
-	Request   ReqDetail    `json:"request"`
-	Response  RespDetail   `json:"response"`
-	Duration  string       `json:"duration"`
+	Timestamp time.Time  `json:"timestamp"`
+	Request   ReqDetail  `json:"request"`
+	Response  RespDetail `json:"response"`
+	Duration  string     `json:"duration"`
 }
 
 type ReqDetail struct {
@@ -29,22 +28,19 @@ type RespDetail struct {
 	Body    string              `json:"body"`
 }
 
-// Recorder captures and stores interactions
 type Recorder struct {
 	mu           sync.Mutex
 	Interactions []Interaction
 	OutputFile   string
 }
 
-// NewRecorder creates a new recorder
 func NewRecorder(outputFile string) *Recorder {
 	return &Recorder{
-		OutputFile: outputFile,
+		OutputFile:   outputFile,
 		Interactions: make([]Interaction, 0),
 	}
 }
 
-// Record captures an interaction
 func (r *Recorder) Record(req *http.Request, reqBody string, resp *http.Response, respBody string, duration time.Duration) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -66,9 +62,6 @@ func (r *Recorder) Record(req *http.Request, reqBody string, resp *http.Response
 	}
 
 	r.Interactions = append(r.Interactions, interaction)
-	
-	// Save immediately or periodically?
-	// For simplicity, save on every request for now to avoid data loss on crash
 	r.save()
 }
 
