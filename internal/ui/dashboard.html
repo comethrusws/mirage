@@ -434,6 +434,7 @@
                 <button class="tab active" onclick="showTab('requests')">Requests</button>
                 <button class="tab" onclick="showTab('test')">Test</button>
                 <button class="tab" onclick="showTab('scenarios')">Scenarios</button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">◐</button>
             </nav>
         </header>
 
@@ -492,6 +493,18 @@
     </div>
 
     <script>
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
         function showTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
