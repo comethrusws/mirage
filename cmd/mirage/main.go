@@ -33,7 +33,6 @@ func main() {
 			addr := fmt.Sprintf(":%d", port)
 			fmt.Printf("Starting Mirage proxy on %s...\n", addr)
 			
-			// Load config if provided
 			var cfg *config.Config
 			if configPath != "" {
 				var err error
@@ -46,14 +45,11 @@ func main() {
 				fmt.Println("No config file specified (-c), running in pure proxy mode")
 			}
 			
-			// Initialize proxy handler
 			p := proxy.NewProxy(cfg, nil)
 			
-			// Initialize UI
 			dashboard := ui.NewUI(p)
 			uiHandler := dashboard.Handler()
 			
-			// Combined handler
 			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if strings.HasPrefix(r.URL.Path, "/__mirage/") {
 					uiHandler.ServeHTTP(w, r)
@@ -62,7 +58,6 @@ func main() {
 				}
 			})
 			
-			// Start server
 			if err := http.ListenAndServe(addr, handler); err != nil {
 				log.Fatalf("Server failed: %v", err)
 			}
@@ -78,7 +73,7 @@ func main() {
 			fmt.Printf("Starting Mirage recorder on %s, saving to %s...\n", addr, outputFile)
 			
 			rec := recorder.NewRecorder(outputFile)
-			p := proxy.NewProxy(nil, rec) // No config in record mode? Or maybe allow both? For now clean slate.
+			p := proxy.NewProxy(nil, rec)
 			
 			if err := http.ListenAndServe(addr, p); err != nil {
 				log.Fatalf("Server failed: %v", err)
@@ -92,7 +87,6 @@ func main() {
 	startCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port to run the proxy on")
 	startCmd.Flags().StringVarP(&configPath, "config", "c", "", "Path to scenarios config file")
 	
-	// Scenarios command
 	var scenariosCmd = &cobra.Command{
 		Use:   "scenarios",
 		Short: "Manage scenarios",
@@ -115,13 +109,11 @@ func main() {
 	}
 	scenariosCmd.AddCommand(listCmd)
 	
-	// Replay command
 	var replayCmd = &cobra.Command{
 		Use:   "replay [traffic.json]",
 		Short: "Replay recorded traffic",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			// Basic playback logic
 			data, err := os.ReadFile(args[0])
 			if err != nil {
 				log.Fatalf("Failed to read file: %v", err)
@@ -145,7 +137,6 @@ func main() {
 					continue
 				}
 				
-				// Restore headers
 				for k, vv := range reqData.Headers {
 					for _, v := range vv {
 						req.Header.Add(k, v)
