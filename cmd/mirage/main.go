@@ -12,6 +12,7 @@ import (
 	"mirage/internal/proxy"
 	"mirage/internal/recorder"
 	"mirage/internal/ui"
+	"mirage/internal/updater"
 
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
@@ -181,10 +182,24 @@ func main() {
 		},
 	}
 
+	var updateCmd = &cobra.Command{
+		Use:   "update",
+		Short: "Update mirage to the latest version",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger.PrintBanner(version)
+			
+			if err := updater.Update(version); err != nil {
+				logger.LogError(err.Error())
+				os.Exit(1)
+			}
+		},
+	}
+
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(recordCmd)
 	rootCmd.AddCommand(scenariosCmd)
 	rootCmd.AddCommand(replayCmd)
+	rootCmd.AddCommand(updateCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		logger.LogError(err.Error())
