@@ -1,9 +1,11 @@
 package proxy
 
 import (
+	"bytes"
 	"io"
 	"log"
 	"net/http"
+	"time"
 )
 
 // Proxy implements http.Handler and forwards requests
@@ -25,41 +27,36 @@ func NewProxy() *Proxy {
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Log the incoming request
-	log.Printf("Received request: %s %s", r.Method, r.URL.String())
+	start := time.Now()
 
-	// Handle explicit proxy requests (where URL is absolute) vs transparent/reverse (relative path)
-	// For now, let's assume explicit proxy usage or we treat it as passing through.
-	// If the request has no host, it might be a direct request to the proxy. Since we are a gateway,
-	// we expect the client to be configured to use us as a proxy OR we are placed in front.
-	// If the URL Scheme is missing, we might assume HTTP.
 
-	outReq := r.Clone(r.Context())
+
+	// Read and log request body
+	var reqBody []byte
+	if r.Body != nil {
+		reqBody, _ = io.ReadAll(r.Body)
+		r.Body = io.NopCloser(bytes.NewBuffer(reqBody)) // Restore body
+	}
 	
-	// If RequestURI is absolute (proxy mode), Request.URL is populated.
-	// If transparent, we might need to know the target. 
-	// The requirements say "Act as an HTTP/HTTPS proxy server".
-	// Standard HTTP proxy receives "GET http://target.com/path HTTP/1.1".
-	
-	if r.URL.Scheme == "" {
-		// Just a fall back for testing or transparent mode (if we knew target)
-		// For now, if no scheme, we can't really forward unless we default to something?
-		// But in explicit proxy mod, scheme is present.
-		// Let's assume explicit proxy for this step.
-		
-		// If it's a CONNECT request (HTTPS), that's handled differently (tunneling).
-		// Requirements: "Certificate generation/HTTPS MITM (start with HTTP only, add HTTPS later)"
-		// So we only handle HTTP.
+	// Truncate body for logging if too long
+	logReqBody := string(reqBody)
+	if len(logReqBody) > 500 {
+		logReqBody = logReqBody[:500] + "...(truncated)"
 	}
 
+	log.Printf("[REQ] %s %s Headers: %v Body: %s", r.Method, r.URL.String(), r.Header, logReqBody)
+
+	// Handle explicit proxy requests (where URL is absolute) vs transparent/reverse (relative path)
+	outReq := r.Clone(r.Context())
+	
 	// Remove hop-by-hop headers
 	delHopHeaders(outReq.Header)
 
 	// Forward the request
 	resp, err := p.client.Do(outReq)
 	if err != nil {
+		log.Printf("[ERR] Forwarding failed: %v", err)
 		http.Error(w, "Error forwarding request: "+err.Error(), http.StatusBadGateway)
-		log.Printf("Error forwarding: %v", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -71,8 +68,41 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Write status code
 	w.WriteHeader(resp.StatusCode)
 
-	// Copy body
-	io.Copy(w, resp.Body)
+	// Read response body to log it (and write to client)
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("[ERR] Reading response body: %v", err)
+		return
+	}
+	
+	// Write body to client
+	w.Write(respBody)
+
+	// Log response
+	duration := time.Since(start)
+	logRespBody := string(respBody)
+	if len(logRespBody) > 500 {
+		logRespBody = logRespBody[:500] + "...(truncated)"
+	}
+	
+	log.Printf("[RES] Status: %d Duration: %v Body: %s", resp.StatusCode, duration, logRespBody)
+}
+
+// custom response writer to capture status (if we needed it for middleware, but here we log after receiving response)
+type responseWriter struct {
+	http.ResponseWriter
+	status int
+	wroteHeader bool
+}
+
+func newResponseWriter(w http.ResponseWriter) *responseWriter {
+	return &responseWriter{ResponseWriter: w}
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.status = code
+	rw.wroteHeader = true
+	rw.ResponseWriter.WriteHeader(code)
 }
 
 func copyHeader(dst, src http.Header) {
