@@ -27,11 +27,26 @@
             --radius: 8px;
         }
 
+        [data-theme="dark"] {
+            --bg: #0a0a0a;
+            --bg-secondary: #171717;
+            --border: #262626;
+            --border-hover: #404040;
+            --text: #fafafa;
+            --text-secondary: #a3a3a3;
+            --text-tertiary: #737373;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif;
             background: var(--bg);
             color: var(--text);
             line-height: 1.6;
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
 
         .container {
@@ -73,9 +88,24 @@
             font-weight: 400;
         }
 
+        .theme-toggle {
+            padding: 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.15s ease;
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--border-hover);
+        }
+
         nav {
             display: flex;
             gap: 4px;
+            align-items: center;
         }
 
         .tab {
@@ -638,6 +668,7 @@
         setInterval(fetchScenarios, 5000);
         fetchRequests();
         fetchScenarios();
+        initTheme();
     </script>
 </body>
 
