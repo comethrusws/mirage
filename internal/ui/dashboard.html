@@ -1,73 +1,380 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mirage Dashboard</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
-        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
-        .card { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 20px; min-height: 200px; }
-        h2 { margin-top: 0; font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        
-        /* Requests Table */
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
-        th { color: #666; font-weight: 600; }
-        .method { font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; }
-        .method.GET { background: #e3f2fd; color: #1976d2; }
-        .method.POST { background: #e8f5e9; color: #388e3c; }
-        .method.PUT { background: #fff3e0; color: #f57c00; }
-        .method.DELETE { background: #ffebee; color: #d32f2f; }
-        .status { font-weight: bold; }
-        .status.ok { color: #388e3c; }
-        .status.error { color: #d32f2f; }
-        .matched { font-size: 0.8em; background: #fff8e1; color: #fbc02d; padding: 2px 6px; border-radius: 4px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        /* Scenarios List */
-        .scenario-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .scenario-info { flex: 1; }
-        .scenario-name { font-weight: 600; display: block; }
-        .scenario-detail { font-size: 0.8em; color: #666; }
-        .switch { position: relative; display: inline-block; width: 40px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #2196F3; }
-        input:checked + .slider:before { transform: translateX(16px); }
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #1a1f3a;
+            --bg-card: rgba(30, 35, 60, 0.7);
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7c3aed;
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1f3a 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 3rem;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: fadeInUp 0.6s ease-out forwards;
+            opacity: 0;
+        }
+
+        .card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            background: rgba(0, 212, 255, 0.1);
+            color: var(--accent-primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0.5rem;
+        }
+
+        thead th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        tbody tr {
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.07);
+            transform: translateX(4px);
+        }
+
+        tbody td {
+            padding: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        tbody td:first-child {
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px 0 0 8px;
+        }
+
+        tbody td:last-child {
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .method.GET {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .method.POST {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+
+        .method.PUT {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .method.DELETE {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+        }
+
+        .method.PATCH {
+            background: rgba(124, 58, 237, 0.15);
+            color: var(--accent-secondary);
+        }
+
+        .status {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .status.ok {
+            color: var(--success);
+        }
+
+        .status.warn {
+            color: var(--warning);
+        }
+
+        .status.error {
+            color: var(--error);
+        }
+
+        .duration {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .url {
+            color: var(--text-secondary);
+            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .matched {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
+        .scenario-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .scenario-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--accent-primary);
+        }
+
+        .scenario-info {
+            flex: 1;
+        }
+
+        .scenario-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .scenario-detail {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+        }
+
+        .switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.slider {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(24px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
+
 <body>
-    <header style="margin-bottom: 20px;">
-        <h1 style="margin: 0;">Mirage Dashboard</h1>
-    </header>
-    
     <div class="container">
-        <!-- Request Log -->
-        <div class="card">
-            <h2>Recent Requests</h2>
-            <div style="overflow-x: auto;">
-                <table id="reqTable">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Method</th>
-                            <th>Status</th>
-                            <th>Duration</th>
-                            <th>Path</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+        <header>
+            <h1>Mirage</h1>
+            <p class="subtitle">API Mocking Gateway & Traffic Recorder</p>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2>📊 Request Log</h2>
+                    <span class="badge" id="requestCount">0 requests</span>
+                </div>
+                <div id="requestTable"></div>
             </div>
-        </div>
-        
-        <!-- Scenarios -->
-        <div class="card">
-            <h2>Scenarios</h2>
-            <div id="scenarioList"></div>
-            <div style="margin-top: 10px; text-align: right; font-size: 0.8em; color: #999;">
-                Auto-refreshes every 2s
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>🎭 Scenarios</h2>
+                </div>
+                <div id="scenarioList"></div>
             </div>
         </div>
     </div>
@@ -75,27 +382,56 @@
     <script>
         function formatTime(iso) {
             const d = new Date(iso);
-            return d.toLocaleTimeString();
+            return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function formatDuration(ns) {
+            const ms = Math.round(ns / 1000000);
+            return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`;
         }
 
         async function fetchRequests() {
             try {
                 const res = await fetch('/__mirage/api/requests');
                 const logs = await res.json();
-                const tbody = document.querySelector('#reqTable tbody');
-                tbody.innerHTML = logs.reverse().map(l => `
-                    <tr>
-                        <td>${formatTime(l.timestamp)}</td>
-                        <td><span class="method ${l.method}">${l.method}</span></td>
-                        <td><span class="status ${l.status >= 400 ? 'error' : 'ok'}">${l.status}</span></td>
-                        <td>${Math.round(l.duration / 1000000)}ms</td>
-                        <td>
-                            <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${l.url}</div>
-                            ${l.matched ? `<span class="matched">Mock: ${l.matched}</span>` : ''}
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (e) { console.error(e); }
+                const container = document.getElementById('requestTable');
+                document.getElementById('requestCount').textContent = `${logs.length} requests`;
+
+                if (logs.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🌙</div><p>No requests yet</p></div>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                                <th>Duration</th>
+                                <th>Path</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${logs.reverse().map(l => `
+                                <tr>
+                                    <td style="font-variant-numeric: tabular-nums; color: var(--text-secondary);">${formatTime(l.timestamp)}</td>
+                                    <td><span class="method ${l.method}">${l.method}</span></td>
+                                    <td><span class="status ${l.status >= 400 ? 'error' : l.status >= 300 ? 'warn' : 'ok'}">${l.status}</span></td>
+                                    <td><span class="duration">${formatDuration(l.duration)}</span></td>
+                                    <td>
+                                        <div class="url">${l.url}</div>
+                                        ${l.matched ? `<div class="matched">Mock: ${l.matched}</div>` : ''}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                console.error('Failed to fetch requests:', e);
+            }
         }
 
         async function fetchScenarios() {
@@ -103,12 +439,17 @@
                 const res = await fetch('/__mirage/api/scenarios');
                 const scenarios = await res.json();
                 const container = document.getElementById('scenarioList');
-                // Don't redraw if interacting? Basic implementation overwrites.
+
+                if (scenarios.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🎭</div><p>No scenarios loaded</p></div>';
+                    return;
+                }
+
                 container.innerHTML = scenarios.map(s => `
                     <div class="scenario-item">
                         <div class="scenario-info">
-                            <span class="scenario-name">${s.Name}</span>
-                            <span class="scenario-detail">${s.Match.Method || '*'} ${s.Match.Path}</span>
+                            <div class="scenario-name">${s.Name}</div>
+                            <div class="scenario-detail">${s.Match.Method || '*'} ${s.Match.Path}</div>
                         </div>
                         <label class="switch">
                             <input type="checkbox" ${s.Enabled ? 'checked' : ''} onchange="toggleScenario('${s.Name}', this.checked)">
@@ -116,7 +457,9 @@
                         </label>
                     </div>
                 `).join('');
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error('Failed to fetch scenarios:', e);
+            }
         }
 
         async function toggleScenario(name, enabled) {
@@ -126,18 +469,18 @@
                     body: JSON.stringify({ enabled }),
                     headers: { 'Content-Type': 'application/json' }
                 });
-                fetchScenarios(); // refresh
+                fetchScenarios();
             } catch (e) {
-                console.error(e);
+                console.error('Failed to toggle scenario:', e);
                 alert('Failed to toggle scenario');
             }
         }
 
-        // Poll
         setInterval(fetchRequests, 2000);
         setInterval(fetchScenarios, 5000);
         fetchRequests();
         fetchScenarios();
     </script>
 </body>
+
 </html>
