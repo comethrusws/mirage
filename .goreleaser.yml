@@ -54,23 +54,10 @@ changelog:
       - '^chore:'
       - '^ci:'
 
-brews:
-  - repository:
-      owner: comethrusws
-      name: homebrew-mirage
-      token: "{{ .Env.GITHUB_TOKEN }}"
-    folder: Formula
-    homepage: https://github.com/comethrusws/mirage
-    description: "API mocking gateway and traffic recorder"
-    license: MIT
-    test: |
-      system "#{bin}/mirage", "version"
-    install: |
-      bin.install "mirage"
-
 release:
   github:
     owner: comethrusws
     name: mirage
   draft: false
   prerelease: auto
+

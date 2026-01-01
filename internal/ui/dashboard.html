@@ -43,6 +43,19 @@
         header {
             margin-bottom: 3rem;
             animation: slideDown 0.6s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            filter: drop-shadow(0 4px 12px rgba(0, 212, 255, 0.3));
+        }
+
+        .header-content {
+            flex: 1;
         }
 
         h1 {
@@ -350,6 +363,11 @@
             .grid {
                 grid-template-columns: 1fr;
             }
+
+            header {
+                flex-direction: column;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -357,8 +375,42 @@
 <body>
     <div class="container">
         <header>
-            <h1>Mirage</h1>
-            <p class="subtitle">API Mocking Gateway & Traffic Recorder</p>
+            <svg class="logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0A2463;stop-opacity:0.9" />
+                        <stop offset="100%" style="stop-color:#3E92CC;stop-opacity:0.8" />
+                    </linearGradient>
+                    <linearGradient id="grad2" x1="100%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#3E92CC;stop-opacity:0.8" />
+                        <stop offset="100%" style="stop-color:#4EF4E3;stop-opacity:0.7" />
+                    </linearGradient>
+                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="5" result="coloredBlur" />
+                        <feMerge>
+                            <feMergeNode in="coloredBlur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
+                </defs>
+                <g transform="translate(100, 100) rotate(-15) translate(-100, -100)">
+                    <rect x="30" y="50" width="120" height="120" rx="20" transform="rotate(45 90 110)"
+                        fill="url(#grad1)" />
+                    <path d="M40 100 H200" stroke="white" stroke-width="4" stroke-opacity="0.3"
+                        stroke-linecap="round" />
+                    <path d="M50 125 H190" stroke="white" stroke-width="4" stroke-opacity="0.3"
+                        stroke-linecap="round" />
+                    <path d="M50 75 H190" stroke="white" stroke-width="4" stroke-opacity="0.3" stroke-linecap="round" />
+                    <rect x="70" y="50" width="120" height="120" rx="20" transform="rotate(45 130 110)"
+                        fill="url(#grad2)" style="mix-blend-mode: screen;" />
+                </g>
+                <path d="M110 65 L140 100 L110 135 L80 100 Z" fill="#4EF4E3" fill-opacity="0.6" filter="url(#glow)"
+                    style="mix-blend-mode: overlay;" />
+            </svg>
+            <div class="header-content">
+                <h1>Mirage</h1>
+                <p class="subtitle">API Mocking Gateway & Traffic Recorder</p>
+            </div>
         </header>
 
         <div class="grid">
