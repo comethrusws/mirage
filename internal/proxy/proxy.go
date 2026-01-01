@@ -6,30 +6,36 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"mirage/internal/config"
+	"mirage/internal/scenario"
 )
 
 // Proxy implements http.Handler and forwards requests
 type Proxy struct {
-	client *http.Client
+	client  *http.Client
+	matcher *scenario.Matcher
 }
 
 // NewProxy creates a new Proxy instance
-func NewProxy() *Proxy {
+func NewProxy(cfg *config.Config) *Proxy {
+	var m *scenario.Matcher
+	if cfg != nil {
+		m = scenario.NewMatcher(cfg.Scenarios)
+	}
+
 	return &Proxy{
 		client: &http.Client{
-			// Verify certificates for now? Or skip?
-			// For a dev tool, maybe we want to be lenient, but start safe.
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse // Don't follow redirects, forward them
 			},
 		},
+		matcher: m,
 	}
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-
-
 
 	// Read and log request body
 	var reqBody []byte
@@ -46,7 +52,18 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[REQ] %s %s Headers: %v Body: %s", r.Method, r.URL.String(), r.Header, logReqBody)
 
-	// Handle explicit proxy requests (where URL is absolute) vs transparent/reverse (relative path)
+	// Check for mock scenario
+	if p.matcher != nil {
+		if s := p.matcher.Match(r); s != nil {
+			log.Printf("[MOCK] Matched scenario: %s", s.Name)
+			scenario.ServeMock(w, s)
+			
+			duration := time.Since(start)
+			log.Printf("[RES] [MOCK] Status: %d Duration: %v", s.Response.Status, duration)
+			return
+		}
+	}
+
 	outReq := r.Clone(r.Context())
 	
 	// Remove hop-by-hop headers
@@ -86,23 +103,6 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	log.Printf("[RES] Status: %d Duration: %v Body: %s", resp.StatusCode, duration, logRespBody)
-}
-
-// custom response writer to capture status (if we needed it for middleware, but here we log after receiving response)
-type responseWriter struct {
-	http.ResponseWriter
-	status int
-	wroteHeader bool
-}
-
-func newResponseWriter(w http.ResponseWriter) *responseWriter {
-	return &responseWriter{ResponseWriter: w}
-}
-
-func (rw *responseWriter) WriteHeader(code int) {
-	rw.status = code
-	rw.wroteHeader = true
-	rw.ResponseWriter.WriteHeader(code)
 }
 
 func copyHeader(dst, src http.Header) {

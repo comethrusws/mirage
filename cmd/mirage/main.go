@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"mirage/internal/config"
 	"mirage/internal/proxy"
 
 	"github.com/spf13/cobra"
@@ -13,6 +14,7 @@ import (
 
 func main() {
 	var port int
+	var configPath string
 
 	var rootCmd = &cobra.Command{
 		Use:   "mirage",
@@ -27,8 +29,21 @@ func main() {
 			addr := fmt.Sprintf(":%d", port)
 			fmt.Printf("Starting Mirage proxy on %s...\n", addr)
 			
+			// Load config if provided
+			var cfg *config.Config
+			if configPath != "" {
+				var err error
+				cfg, err = config.LoadConfig(configPath)
+				if err != nil {
+					log.Fatalf("Failed to load config: %v", err)
+				}
+				fmt.Printf("Loaded configuration from %s (%d scenarios)\n", configPath, len(cfg.Scenarios))
+			} else {
+				fmt.Println("No config file specified (-c), running in pure proxy mode")
+			}
+			
 			// Initialize proxy handler
-			p := proxy.NewProxy()
+			p := proxy.NewProxy(cfg)
 			
 			// Start server
 			if err := http.ListenAndServe(addr, p); err != nil {
@@ -38,6 +53,7 @@ func main() {
 	}
 
 	startCmd.Flags().IntVarP(&port, "port", "p", 8080, "Port to run the proxy on")
+	startCmd.Flags().StringVarP(&configPath, "config", "c", "", "Path to scenarios config file")
 	rootCmd.AddCommand(startCmd)
 
 	if err := rootCmd.Execute(); err != nil {
